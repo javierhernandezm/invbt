@@ -1,3 +1,21 @@
+__copyright__ = "Copyright (C) 2022 Alpha Rho Techologies LLC"
+'''
+All rights reserved.
+
+TERMS OF USE:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software for personal, non-commercial use. This includes the rights to use, copy, and modify the software for personal purposes.
+
+The above permission does NOT include the rights to use the software, in whole or in part, for any commercial purposes. Commercial use includes, but is not limited to, any revenue-generating activity, whether direct or indirect, related to the software.
+
+RESTRICTIONS:
+1. Redistribution in any form is prohibited.
+2. Use in commercial or business environments, or any use for commercial benefit, is strictly prohibited.
+3. The software may not be included as a part of any product which has a commercial purpose, whether it is sold or given away for free.
+
+NO WARRANTY:
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED.
+'''
+
 import logging
 import datetime as dt
 import pandas as pd
