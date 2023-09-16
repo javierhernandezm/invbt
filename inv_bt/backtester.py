@@ -73,14 +73,14 @@ def calculate_rebalance_cost(current_portfolio: pd.Series, prev_portfolio: pd.Se
     except Exception as e:
         logging.error(f'ERROR calculating rebalance costs | {e}')
 
-def inv_strat_bt(portfolios:pd.DataFrame,asset_price_data:pd.DataFrame,balance_freq:str,end_date:dt.date,trans_cost:float,starting_balance:float) -> dict:
+def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.date,trans_cost:float,starting_balance:float) -> dict:
     """
     Backtest various investment strategies using historical price data to evaluate portfolio performance over time.
 
     Parameters:
     - portfolios (pd.DataFrame): A DataFrame containing the asset allocations for different portfolios.
             Each column represents a unique portfolio at a point in time and each row is an asset with its weight over time.
-    - asset_price_data (pd.DataFrame): A DataFrame containing historical price data for each asset. 
+    - apd (pd.DataFrame): Asset Price DataFrame containing historical price data for each asset. 
             Each row represents a date and each column represents the price of an asset.
     - balance_freq (str): The frequency at which the backtester should calculate the strategy balance. 
             Examples include: 'D': daily,
@@ -107,11 +107,11 @@ def inv_strat_bt(portfolios:pd.DataFrame,asset_price_data:pd.DataFrame,balance_f
     returns_start_date = rebalance_dates[0].date()
 
     # Used to calculate rebalance costs:
-    last_weights = pd.Series(0,index=asset_price_data.columns)
+    last_weights = pd.Series(0,index=apd.columns)
 
     # Asset price data used in simulation:
     try:
-      sim_price_data = asset_price_data.resample(balance_freq).last()
+      sim_price_data = apd.resample(balance_freq).last()
     except Exception as e:
         logging.error(f'Check balance_freq format! | {e}')
 
