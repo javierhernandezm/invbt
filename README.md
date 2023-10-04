@@ -15,14 +15,15 @@ Welcome to Investment-Strategy-Backtester, a robust open-source library designed
     - Python 3.6 or higher.
     - `requests` module:
     ```bash
-    pip install requests
+    pip install pandas
+    pip install datetime
+    pip install numpy
     ```
 
 2. **Clone the Repository**:
 
     ```bash
-    git clone https://github.com/Alpha-Rho-Technologies/API
-    ```
+    git clone https://github.com/Alpha-Rho-Technologies/investment_strategy_backtester
 
 3. Navigate to the cloned directory:
 
