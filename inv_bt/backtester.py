@@ -65,7 +65,7 @@ def balance_calc(portfolio_weights: pd.Series, balance: float, date_filtered_ret
         return {'balance_df': balance_over_time, 'last_portfolio': final_portfolio}
     
     except Exception as e:
-        logging.error(f'ERROR Calculating BT Balance | {e}')
+        logging.exception(f'ERROR Calculating BT Balance | {e}')
 
 def calculate_rebalance_cost(current_portfolio: pd.Series, prev_portfolio: pd.Series, transaction_cost: float) -> float:
     """
@@ -89,7 +89,7 @@ def calculate_rebalance_cost(current_portfolio: pd.Series, prev_portfolio: pd.Se
         return total_cost
     
     except Exception as e:
-        logging.error(f'ERROR calculating rebalance costs | {e}')
+        logging.exception(f'ERROR calculating rebalance costs | {e}')
 
 def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.date,trans_cost:float,starting_balance:float) -> dict:
     """
@@ -131,7 +131,7 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
     try:
       sim_price_data = apd.resample(balance_freq).last()
     except Exception as e:
-        logging.error(f'Check balance_freq format! | {e}')
+        logging.exception(f'Check balance_freq format! | {e}')
 
     # Calculate Strategy balance:
     n_rebalances = len(rebalance_dates)
@@ -152,7 +152,7 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
                     break
         
         except Exception as e:
-            logging.error(f'ERROR setting BT dates | {e}')
+            logging.exception(f'ERROR setting BT dates | {e}')
         
         # Filter Simulation Price df to match portfolio rebalance range & assets:
         date_filtered_returns = sim_price_data[portfolio_weights.index].loc[returns_start_date : date_to].pct_change().round(6).dropna()
