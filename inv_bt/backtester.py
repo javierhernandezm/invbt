@@ -155,7 +155,7 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
             logging.exception(f'ERROR setting BT dates | {e}')
         
         # Filter Simulation Price df to match portfolio rebalance range & assets:
-        date_filtered_returns = sim_price_data[portfolio_weights.index].loc[returns_start_date : date_to].pct_change().round(6).dropna()
+        date_filtered_returns = sim_price_data[portfolio_weights.index].loc[returns_start_date : date_to].pct_change(fill_method=None).round(6).dropna()
         
         # Calc transaction cost:
         if trans_cost <= 0:
