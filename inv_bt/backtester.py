@@ -44,7 +44,7 @@ def balance_calc(portfolio_weights: pd.Series, balance: float, date_filtered_ret
             cumulative_log_returns = np.log(1 + date_filtered_returns).cumsum()
 
             # Calculate the Net Asset Value (NAV) of each asset over time
-            position_NAV = initial_portfolio * np.exp(cumulative_log_returns).round(6)
+            position_NAV = (initial_portfolio * np.exp(cumulative_log_returns)).round(2)
 
             # Calculate the total balance over time
             balance_over_time = position_NAV.sum(axis=1)
@@ -117,19 +117,25 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
     # Set starting balance:
     balance = starting_balance
 
+    # Standarize end_date:
+    try:
+        end_date = end_date.date()
+    except:
+        pass
+
     # Initialize Object to store balance data:
     all_dates_balance = {}
 
     # Get rebalance dates from portfolios:
-    rebalance_dates = portfolios.columns
-    returns_start_date = rebalance_dates[0].date()
+    rebalance_dates = portfolios.columns.date
+    returns_start_date = rebalance_dates[0]
 
     # Used to calculate rebalance costs:
     last_weights = pd.Series(0,index=apd.columns)
 
     # Asset price data used in simulation:
     try:
-      sim_price_data = apd.resample(balance_freq).last()
+      sim_price_data = apd.resample(balance_freq).last().ffill()
     except Exception as e:
         logging.exception(f'Check balance_freq format! | {e}')
 
