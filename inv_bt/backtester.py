@@ -101,7 +101,8 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
     - apd (pd.DataFrame): Asset Price DataFrame containing historical price data for each asset. 
             Each row represents a date and each column represents the price of an asset.
     - balance_freq (str): The frequency at which the backtester should calculate the strategy balance. 
-            Examples include: 'D': daily,
+            Examples include: 'B': Business Days
+                            'D': daily,
                             'W': weekly,
                             'M': Monthly,
                             'Q': 'quarterly', etc.
@@ -133,9 +134,9 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
     # Used to calculate rebalance costs:
     last_weights = pd.Series(0,index=apd.columns)
 
-    # Asset price data used in simulation:
     try:
-      sim_price_data = apd.resample(balance_freq).last().ffill()
+      # Asset price data used in simulation: Resampled to fit rebalance dates without missing %
+      sim_price_data = apd.resample('D').last().ffill()
     except Exception as e:
         logging.exception(f'Check balance_freq format! | {e}')
 
@@ -161,7 +162,7 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
             logging.exception(f'ERROR setting BT dates | {e}')
         
         # Filter Simulation Price df to match portfolio rebalance range & assets:
-        date_filtered_returns = sim_price_data[portfolio_weights.index].loc[returns_start_date : date_to].pct_change(fill_method=None).round(6).dropna()
+        date_filtered_returns = sim_price_data[portfolio_weights.index].loc[returns_start_date : date_to].pct_change(fill_method=None).dropna()
         
         # Calc transaction cost:
         if trans_cost <= 0:
@@ -189,5 +190,15 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
         
         # Set date & balance for next sim: 
         returns_start_date = date_to
-      
-    return all_dates_balance
+    
+    # Create Balance series:
+    bt_balance = pd.concat(all_dates_balance.values())
+
+    # Add initial balance to final balance series:
+    start_date = pd.to_datetime(rebalance_dates[0])
+    bt_balance[start_date] = starting_balance
+    
+    # Resample to desired balance frequency:
+    bt_balance = bt_balance.sort_index().resample(balance_freq).last().ffill()
+    
+    return bt_balance
