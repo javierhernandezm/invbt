@@ -13,7 +13,6 @@ Welcome to Investment-Strategy-Backtester, a robust open-source library designed
 1. ### **Prerequisites**:
 
     - Python 3.6 or higher.
-    - `requests` module:
     ```bash
     pip install pandas
     pip install datetime
@@ -23,7 +22,7 @@ Welcome to Investment-Strategy-Backtester, a robust open-source library designed
 2. ### **Clone the Repository**:
 
     ```bash
-    git clone https://github.com/Alpha-Rho-Technologies/investment_strategy_backtester
+    git clone https://github.com/Alpha-Rho-Technologies/invbt
 
 3. ### Navigate to the cloned directory:
 
