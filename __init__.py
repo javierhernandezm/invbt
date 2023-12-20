@@ -17,7 +17,7 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED
 '''
 from invbt.src.utils import *
 
-def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.date,trans_cost:float,starting_balance:float) -> dict:
+def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.date,trans_cost:float,starting_balance:float,annual_kd:float=0) -> dict:
     """
     Backtest various investment strategies using historical price data to evaluate portfolio performance over time.
 
@@ -90,25 +90,16 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
         # Filter Simulation Price df to match portfolio rebalance range & assets:
         date_filtered_returns = sim_price_data[portfolio_weights.index].loc[returns_start_date : date_to].pct_change(fill_method=None).dropna()
         
-        # Calc transaction cost:
-        if trans_cost <= 0:
-            reb_cost = 0
-        else:
-            reb_cost = calculate_rebalance_cost(current_portfolio=portfolio_weights,
-                                                prev_portfolio=last_weights,
-                                                transaction_cost=trans_cost)  
+        # Get costs:
+        reb_cost, lev_cost = get_costs(trans_cost=trans_cost,portfolio_weights=portfolio_weights,
+                                       last_weights=last_weights,annual_kd=annual_kd)
 
         # Apply Transaction costs:
         net_balance = round(balance * (1-reb_cost),2)
 
         # Balance period calculation:
-        sim = balance_calc(portfolio_weights=portfolio_weights,
-                            balance=net_balance,
-                            date_filtered_returns=date_filtered_returns)
-        
-        balance_df = sim['balance_df'].round(2)
-        
-        last_weights = sim['last_portfolio']
+        balance_df,last_weights = balance_calc(portfolio_weights = portfolio_weights, balance=net_balance, 
+                                               date_filtered_returns = date_filtered_returns, kd=lev_cost)
 
         # Final Balance:
         balance = balance_df.iloc[-1]

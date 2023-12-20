@@ -3,7 +3,7 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 
-def balance_calc(portfolio_weights: pd.Series, balance: float, date_filtered_returns: pd.DataFrame) -> dict:
+def balance_calc(portfolio_weights: pd.Series, balance: float, date_filtered_returns: pd.DataFrame,kd:float) -> pd.Series:
     """
     Simulates a portfolio position balance variation over time.
 
@@ -13,7 +13,7 @@ def balance_calc(portfolio_weights: pd.Series, balance: float, date_filtered_ret
     date_filtered_returns (pd.DataFrame): DataFrame of the returns of each asset over time.
 
     Returns:
-    dict: Dictionary containing the balance DataFrame and the last portfolio weights.
+    pd.Series:  balance DataFrame and the last portfolio weights.
     """
     try:
         # If portfolio weights compatible:
@@ -31,6 +31,12 @@ def balance_calc(portfolio_weights: pd.Series, balance: float, date_filtered_ret
             # Calculate the total balance over time
             balance_over_time = position_NAV.sum(axis=1)
 
+            # Apply cost of leverage to balance over time:
+            if kd > 0:
+                balance_net_pct = balance_over_time.pct_change() - kd
+                log_net_pct = np.log(1+balance_net_pct)
+                balance_over_time = balance * np.exp(log_net_pct.cumsum()) 
+
             # Calculate the last balance
             final_balance = balance_over_time.iloc[-1]
 
@@ -44,7 +50,7 @@ def balance_calc(portfolio_weights: pd.Series, balance: float, date_filtered_ret
             balance_over_time = pd.Series(balance, index=dates_index)
             final_portfolio = pd.Series(0,index=portfolio_weights.index)
 
-        return {'balance_df': balance_over_time, 'last_portfolio': final_portfolio}
+        return balance_over_time, final_portfolio
     
     except Exception as e:
         logging.exception(f'ERROR Calculating BT Balance | {e}')
@@ -66,9 +72,49 @@ def calculate_rebalance_cost(current_portfolio: pd.Series, prev_portfolio: pd.Se
         weight_difference = abs(current_portfolio - prev_portfolio)
 
         # Calculate the total transaction cost
-        total_cost = (weight_difference * transaction_cost).sum().round(6)
+        reb_cost = (weight_difference * transaction_cost).sum().round(6)
 
-        return total_cost
+        return reb_cost
     
     except Exception as e:
         logging.exception(f'ERROR calculating rebalance costs | {e}')
+
+def calculate_leverage_costs(annual_cost_of_debt, portfolio_weights, days_in_year=360):
+    """
+    Calculate the leverage costs of rebalancing and leverage for a portfolio.
+
+    Parameters:
+    annual_cost_of_debt (float): The annual cost of debt as a percentage.
+    portfolio_weights (pd.Series): The current portfolio weights.
+    days_in_year (int, optional): The number of days in a year for interest calculation. Defaults to 360.
+
+    Returns:
+    float: The total costs incurred from rebalancing and leverage.
+    """
+    try:
+        leverage_cost = 0
+        if annual_cost_of_debt > 0:
+            total_debt = abs(portfolio_weights[portfolio_weights<0].sum())
+            if total_debt > 0:
+                daily_cost_of_debt = annual_cost_of_debt / days_in_year
+                leverage_cost = daily_cost_of_debt * total_debt
+
+        return leverage_cost
+    except Exception as e:
+        logging.exception(f'ERROR calculating leverage costs | {e}')
+
+def get_costs(trans_cost,portfolio_weights,last_weights,annual_kd):
+    
+    # Calc transaction cost:
+    if trans_cost <= 0:
+        reb_cost = 0
+    else:
+        reb_cost = calculate_rebalance_cost(current_portfolio=portfolio_weights,
+                                            prev_portfolio=last_weights,
+                                            transaction_cost=trans_cost)
+        
+    # Calculate leverage costs:
+    lev_cost = calculate_leverage_costs(annual_cost_of_debt=annual_kd,
+                                        portfolio_weights=portfolio_weights)
+    
+    return reb_cost,lev_cost
