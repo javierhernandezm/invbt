@@ -3,7 +3,7 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 
-def balance_calc(portfolio_weights: pd.Series, balance: float, date_filtered_returns: pd.DataFrame,kd:float) -> pd.Series:
+def port_balance_calc(portfolio_weights: pd.Series, balance: float, date_filtered_returns: pd.DataFrame,kd:float) -> pd.Series:
     """
     Simulates a portfolio position balance variation over time.
 
@@ -54,6 +54,70 @@ def balance_calc(portfolio_weights: pd.Series, balance: float, date_filtered_ret
     
     except Exception as e:
         logging.exception(f'ERROR Calculating BT Balance | {e}')
+
+def get_balance(starting_balance,rebalance_dates,portfolios,end_date,sim_price_data,trans_cost,annual_kd):
+    
+    # Initialize Object to store balance data:
+    all_dates_balance = {}
+
+    # Set starting balance:
+    balance = starting_balance
+
+    # Standarize end_date:
+    try:
+        end_date = end_date.date()
+    except:
+        pass
+
+    # Get rebalance dates from portfolios:
+    returns_start_date = rebalance_dates[0]
+
+    # Used to calculate rebalance costs:
+    last_weights = pd.Series(0,index=sim_price_data.columns)
+    
+    # Calculate Strategy balance:
+    n_rebalances = len(rebalance_dates)
+    for reb_n in range(0,n_rebalances):
+
+        portfolio_weights = portfolios.iloc[:,reb_n].dropna()
+
+        # Set Date to with next portfolio rebalance
+        try:
+            if reb_n+1 < n_rebalances:
+                next_port = portfolios.iloc[:,reb_n+1]
+                date_to = next_port.name.date()
+            else:
+                # Check End of simulation
+                date_to = end_date
+
+                if returns_start_date == date_to:
+                    break
+        
+        except Exception as e:
+            logging.exception(f'ERROR setting BT dates | {e}')
+        
+        # Filter Simulation Price df to match portfolio rebalance range & assets:
+        date_filtered_returns = sim_price_data[portfolio_weights.index].loc[returns_start_date : date_to].pct_change(fill_method=None).dropna()
+        
+        # Get costs:
+        reb_cost, lev_cost = get_costs(trans_cost=trans_cost,portfolio_weights=portfolio_weights,
+                                       last_weights=last_weights,annual_kd=annual_kd)
+
+        # Apply Transaction costs:
+        net_balance = round(balance * (1-reb_cost),2)
+
+        # Balance period calculation:
+        balance_df,last_weights = port_balance_calc(portfolio_weights = portfolio_weights, balance=net_balance, 
+                                               date_filtered_returns = date_filtered_returns, kd=lev_cost)
+
+        # Final Balance:
+        balance = balance_df.iloc[-1]
+        all_dates_balance[reb_n] = balance_df
+        
+        # Set date & balance for next sim: 
+        returns_start_date = date_to
+    
+    return all_dates_balance
 
 def calculate_rebalance_cost(current_portfolio: pd.Series, prev_portfolio: pd.Series, transaction_cost: float) -> float:
     """
