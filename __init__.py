@@ -17,9 +17,9 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED
 '''
 from invbt.src.utils import *
 
-def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.date,trans_cost:float,starting_balance:float) -> dict:
+def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.date,trans_cost:float,starting_balance:float,annual_kd:float=0) -> dict:
     """
-    Backtest various investment strategies using historical price data to evaluate portfolio performance over time.
+    Backtest long/short investment strategies using historical price data to evaluate portfolio performance over time.
 
     Parameters:
     - portfolios (pd.DataFrame): A DataFrame containing the asset allocations for different portfolios.
@@ -40,25 +40,9 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
     - dict: A dictionary containing the backtest results for each portfolio. Each key is a portfolio identifier, and the 
             value is a pandas series with the portfolio performance over that timeframe.
     """
-        
-    # Set starting balance:
-    balance = starting_balance
 
-    # Standarize end_date:
-    try:
-        end_date = end_date.date()
-    except:
-        pass
-
-    # Initialize Object to store balance data:
-    all_dates_balance = {}
-
-    # Get rebalance dates from portfolios:
+    # Get rebalance dates:
     rebalance_dates = portfolios.columns.date
-    returns_start_date = rebalance_dates[0]
-
-    # Used to calculate rebalance costs:
-    last_weights = pd.Series(0,index=apd.columns)
 
     try:
       # Asset price data used in simulation: Resampled to fit rebalance dates without missing %
@@ -67,55 +51,10 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
         logging.exception(f'Check balance_freq format! | {e}')
 
     # Calculate Strategy balance:
-    n_rebalances = len(rebalance_dates)
-    for reb_n in range(0,n_rebalances):
-
-        portfolio_weights = portfolios.iloc[:,reb_n].dropna()
-
-        # Set Date to with next portfolio rebalance
-        try:
-            if reb_n+1 < n_rebalances:
-                next_port = portfolios.iloc[:,reb_n+1]
-                date_to = next_port.name.date()
-            else:
-                # Check End of simulation
-                date_to = end_date
-
-                if returns_start_date == date_to:
-                    break
-        
-        except Exception as e:
-            logging.exception(f'ERROR setting BT dates | {e}')
-        
-        # Filter Simulation Price df to match portfolio rebalance range & assets:
-        date_filtered_returns = sim_price_data[portfolio_weights.index].loc[returns_start_date : date_to].pct_change(fill_method=None).dropna()
-        
-        # Calc transaction cost:
-        if trans_cost <= 0:
-            reb_cost = 0
-        else:
-            reb_cost = calculate_rebalance_cost(current_portfolio=portfolio_weights,
-                                                prev_portfolio=last_weights,
-                                                transaction_cost=trans_cost)  
-
-        # Apply Transaction costs:
-        net_balance = round(balance * (1-reb_cost),2)
-
-        # Balance period calculation:
-        sim = balance_calc(portfolio_weights=portfolio_weights,
-                            balance=net_balance,
-                            date_filtered_returns=date_filtered_returns)
-        
-        balance_df = sim['balance_df'].round(2)
-        
-        last_weights = sim['last_portfolio']
-
-        # Final Balance:
-        balance = balance_df.iloc[-1]
-        all_dates_balance[reb_n] = balance_df
-        
-        # Set date & balance for next sim: 
-        returns_start_date = date_to
+    all_dates_balance = get_balance(starting_balance=starting_balance,portfolios=portfolios,
+                                    end_date=end_date,sim_price_data=sim_price_data,
+                                    trans_cost=trans_cost,annual_kd=annual_kd,
+                                    rebalance_dates=rebalance_dates)
     
     # Create Balance series:
     bt_balance = pd.concat(all_dates_balance.values())
