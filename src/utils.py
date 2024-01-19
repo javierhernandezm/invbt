@@ -133,6 +133,9 @@ def calculate_rebalance_cost(current_portfolio: pd.Series, prev_portfolio: pd.Se
     float: The net transaction cost of rebalancing the portfolio.
     """
     try:
+        # Align both portfolios to ensure matching indices
+        current_portfolio, prev_portfolio = current_portfolio.align(prev_portfolio, fill_value=0)
+
         # Calculate the absolute difference in weights between the two portfolios
         weight_difference = abs(current_portfolio - prev_portfolio)
 
