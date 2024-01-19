@@ -97,6 +97,7 @@ def get_balance(starting_balance,rebalance_dates,portfolios,end_date,sim_price_d
             logging.exception(f'ERROR setting BT dates | {e}')
         
         # Filter Simulation Price df to match portfolio rebalance range & assets:
+        portfolio_weights = portfolio_weights[portfolio_weights!=0]
         date_filtered_returns = sim_price_data[portfolio_weights.index].loc[returns_start_date : date_to].pct_change(fill_method=None).dropna()
         
         # Get costs:
