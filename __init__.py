@@ -48,8 +48,8 @@ def bt(portfolios:pd.DataFrame,apd:pd.DataFrame,balance_freq:str,end_date:dt.dat
       # Asset price data used in simulation: Resampled to fit rebalance dates without missing %
       sim_price_data = apd.resample('D').last().ffill()
     except Exception as e:
-        logging.exception(f'Check balance_freq format! | {e}')
-
+      raise Exception(f'Check balance_freq format! | {e}')
+    
     # Calculate Strategy balance:
     all_dates_balance = get_balance(starting_balance=starting_balance,portfolios=portfolios,
                                     end_date=end_date,sim_price_data=sim_price_data,
